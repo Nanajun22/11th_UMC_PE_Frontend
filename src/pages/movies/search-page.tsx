@@ -1,11 +1,8 @@
+
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import {
-  useEffect,
-  useState,
-  type SubmitEvent,
-} from "react";
+import { useEffect, useState, type SubmitEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { searchMovies } from "../../api/movies/search-movies";
-import type { TmdbMovieListItem } from "../../api/movies/models";
 import { getTmdbPosterUrl } from "../../utils/movies/tmdb-image";
 import { BookmarkButton } from "../../components/bookmark-button";
 
@@ -22,44 +19,19 @@ export function SearchPage() {
     query ?? "",
   );
 
-  const [movies, setMovies] = useState<TmdbMovieListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   useEffect(() => {
     setSearchText(query ?? "");
   }, [query]);
 
   const normalizedQuery = query?.trim() ?? "";
 
-  useEffect(() => {
-    let ignore = false;
+  const searchQuery = useQuery({
+    queryKey: ["movies", "search", { query: normalizedQuery }],
+    queryFn: () => searchMovies({ query: normalizedQuery }),
+    enabled: normalizedQuery.length > 0,
+  });
 
-    setMovies([]);
-    setErrorMessage(null);
-
-    if (!normalizedQuery) {
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-
-    searchMovies({ query: normalizedQuery })
-      .then((response) => {
-        if (!ignore) setMovies(response.results);
-      })
-      .catch(() => {
-        if (!ignore) setErrorMessage("검색 결과를 불러오지 못했어요.");
-      })
-      .finally(() => {
-        if (!ignore) setIsLoading(false);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [normalizedQuery]);
+  const movies = searchQuery.data?.results ?? [];
 
   function handleSubmit(
     event: SubmitEvent<HTMLFormElement>,
@@ -107,12 +79,14 @@ export function SearchPage() {
         <p className="text-[#888888]">
           검색어를 입력해 주세요.
         </p>
-      ) : isLoading ? (
+      ) : searchQuery.isPending ? (
         <p className="text-[#888888]">
           검색 결과를 불러오는 중이에요.
         </p>
-      ) : errorMessage ? (
-        <p className="text-[#888888]">{errorMessage}</p>
+      ) : searchQuery.isError ? (
+        <p className="text-[#888888]">
+          {searchQuery.error.message}
+        </p>
       ) : (
         <>
           <h2 className="mb-2 text-[24px] font-bold">
@@ -130,7 +104,9 @@ export function SearchPage() {
           ) : (
             <ul className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {movies.map((movie) => {
-                const posterUrl = getTmdbPosterUrl(movie.poster_path);
+                const posterUrl = getTmdbPosterUrl(
+                  movie.poster_path,
+                );
 
                 return (
                   <li
