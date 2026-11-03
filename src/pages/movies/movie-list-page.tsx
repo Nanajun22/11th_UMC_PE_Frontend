@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useBookmarkStore } from "../../stores/bookmark-store";
 import { MovieGrid } from "../../components/movies/movie-grid";
 import Pagination from "../../components/movies/pagination";
@@ -6,68 +7,61 @@ import { getMovies } from "../../api/movies/get-movies";
 import type { TmdbMovieListItem } from "../../api/movies/models";
 
 export function MovieListPage() {
-  const bookmarkedMovieIds = useBookmarkStore(
-    (state) => state.bookmarkedMovieIds,
-  );
+    const bookmarkedMovieIds = useBookmarkStore(
+        (state) => state.bookmarkedMovieIds,
+    );
 
-  const toggleBookmark = useBookmarkStore(
-    (state) => state.toggleBookmark,
-  );
+    const toggleBookmark = useBookmarkStore(
+        (state) => state.toggleBookmark,
+    );
 
-  const [movies, setMovies] = useState<TmdbMovieListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    let ignore = false;
+    const moviesQuery = useQuery({
+        queryKey: ["movies", "list", { page }],
+        queryFn: () => getMovies({ page }),
+    });
 
-    async function loadMovies() {
-      setIsLoading(true);
-      setErrorMessage(null);
+    const movies = moviesQuery.data?.results ?? [];
+    const totalPages = moviesQuery.data?.total_pages ?? 0;
 
-      try {
-        const response = await getMovies({ page: 1 });
-        if (!ignore) setMovies(response.results);
-      } catch {
-        if (!ignore) setErrorMessage("영화 목록을 불러오지 못했어요.");
-      } finally {
-        if (!ignore) setIsLoading(false);
-      }
-    }
-
-    loadMovies();
-
-    return () => {
-      ignore = true;
+    const handlePageChange = (nextPage: number) => {
+        setPage(nextPage);
     };
-  }, []);
 
-  return (
-    <main className="mx-auto w-full max-w-[1200px] px-4 py-12 pb-20">
-      <div className="mb-8">
-        <h1 className="mb-2 text-[32px] font-bold">영화 목록</h1>
+    return (
+        <main className="mx-auto w-full max-w-[1200px] px-4 py-12 pb-20">
+            <div className="mb-8">
+                <h1 className="mb-2 text-[32px] font-bold">
+                    영화 목록
+                </h1>
 
-        <p className="text-[#888888]">
-          UMCine에서 다양한 영화를 만나보세요.
-        </p>
-      </div>
+                <p className="text-[#888888]">
+                    UMCine에서 다양한 영화를 만나보세요.
+                </p>
+            </div>
 
-      {isLoading ? (
-        <p>영화 목록을 불러오는 중이에요.</p>
-      ) : errorMessage ? (
-        <p>{errorMessage}</p>
-      ) : movies.length === 0 ? (
-        <p>조건에 맞는 영화가 없어요.</p>
-      ) : (
-        <>
-          <MovieGrid
-            movies={movies}
-            bookmarkedMovieIds={bookmarkedMovieIds}
-            onBookmark={toggleBookmark}
-          />
-          <Pagination />
-        </>
-      )}
-    </main>
-  );
+            {moviesQuery.isPending ? (
+                <p>영화 목록을 불러오는 중이에요.</p>
+            ) : moviesQuery.isError ? (
+                <p>{moviesQuery.error.message}</p>
+            ) : movies.length === 0 ? (
+                <p>조건에 맞는 영화가 없어요.</p>
+            ) : (
+                <>
+                    <MovieGrid
+                        movies={movies}
+                        bookmarkedMovieIds={bookmarkedMovieIds}
+                        onBookmark={toggleBookmark}
+                    />
+
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                </>
+            )}
+        </main>
+    );
 }

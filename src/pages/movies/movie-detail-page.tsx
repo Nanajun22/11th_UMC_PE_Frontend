@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+
+import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
-import type { TmdbMovieDetail } from "../../api/movies/models";
 import {
   getTmdbBackdropUrl,
   getTmdbPosterUrl,
@@ -21,46 +21,23 @@ function formatRuntime(runtime: number | null) {
 }
 
 export function MovieDetailPage() {
-  const { movieId } = useParams({
+  const { movieId: movieIdParam } = useParams({
     from: "/movies/$movieId",
   });
 
-  const parsedMovieId = Number(movieId);
+  const movieId = Number(movieIdParam);
+
   const isValidMovieId =
-    Number.isInteger(parsedMovieId) && parsedMovieId > 0;
+    Number.isInteger(movieId) && movieId > 0;
 
-  const [movie, setMovie] = useState<TmdbMovieDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const movieDetailQuery = useQuery({
+    queryKey: ["movies", "detail", movieId],
+    queryFn: () => getMovieDetail(movieId),
+    enabled: isValidMovieId,
+    staleTime: 30 * 1000,
+  });
 
-  useEffect(() => {
-    let ignore = false;
-
-    setMovie(null);
-    setErrorMessage(null);
-
-    if (!isValidMovieId) {
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-
-    getMovieDetail(parsedMovieId)
-      .then((response) => {
-        if (!ignore) setMovie(response);
-      })
-      .catch((error) => {
-        if (!ignore) setErrorMessage(getMovieDetailErrorMessage(error));
-      })
-      .finally(() => {
-        if (!ignore) setIsLoading(false);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [parsedMovieId, isValidMovieId]);
+  
 
   if (!isValidMovieId) {
     return (
@@ -72,7 +49,7 @@ export function MovieDetailPage() {
     );
   }
 
-  if (isLoading) {
+  if (movieDetailQuery.isPending) {
     return (
       <main className="mx-auto w-full max-w-[1200px] px-4 py-20">
         <p className="text-center text-[#888888]">
@@ -82,15 +59,17 @@ export function MovieDetailPage() {
     );
   }
 
-  if (errorMessage || !movie) {
+  if (movieDetailQuery.isError) {
     return (
       <main className="mx-auto w-full max-w-[1200px] px-4 py-20">
         <p className="text-center text-[#888888]">
-          {errorMessage ?? "영화 정보를 불러오지 못했어요."}
+          {getMovieDetailErrorMessage(movieDetailQuery.error)}
         </p>
       </main>
     );
   }
+
+  const movie = movieDetailQuery.data;
 
   const backdropUrl = getTmdbBackdropUrl(movie.backdrop_path);
   const posterUrl = getTmdbPosterUrl(movie.poster_path);
