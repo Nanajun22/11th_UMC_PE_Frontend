@@ -8,7 +8,10 @@ import "./index.css";
 
 
 const router = createRouter({ routeTree });
-const queryClient = new QueryClient();
+const ONE_MINUTE = 60 * 1000;
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: ONE_MINUTE } }, // staleTime: 60 * 1000도 가능
+});
 
 declare module "@tanstack/react-router" {
   interface Register {
@@ -20,7 +23,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-      <ReactQueryDevtools initialIsOpen={false} />
+    
     </QueryClientProvider>
   </StrictMode>,
 );
