@@ -1,14 +1,37 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getMe } from "@/api/members/me";
+import { getFavorites } from "@/api/favorites/get-favorites";
+import { useUpdateMeMutation } from "@/hooks/use-update-me-mutation";
+import { FavoriteMovieCard } from "@/components/movies/favorite-movie-card";
 
 export function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
-  
-  const [userInfo, setUserInfo] = useState({
-    email: "gwangsoo@cinemalab.kr",
-    nickname: "gs0428",
+
+  // 헤더와 같은 queryKey를 써서 내 정보 캐시를 함께 사용해요.
+  const meQuery = useQuery({
+    queryKey: ["members", "me"],
+    queryFn: getMe,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
+  const favoritesQuery = useQuery({
+    queryKey: ["favorites", "list"],
+    queryFn: getFavorites,
+  });
+
+  const updateMeMutation = useUpdateMeMutation();
+
+  const userInfo = {
+    email: meQuery.data?.email ?? "",
+    nickname: meQuery.data?.nickname ?? "",
+  };
+
   const [editForm, setEditForm] = useState({ nickname: userInfo.nickname });
+
+  const nickname = editForm.nickname.trim();
+  const canSubmit = nickname.length >= 2 && nickname.length <= 12;
 
   const handleEditClick = () => {
     setEditForm({ nickname: userInfo.nickname });
@@ -16,8 +39,12 @@ export function ProfilePage() {
   };
 
   const handleSaveClick = () => {
-    setUserInfo((prev) => ({ ...prev, nickname: editForm.nickname }));
-    setIsEditing(false);
+    if (!canSubmit || updateMeMutation.isPending) return;
+
+    updateMeMutation.mutate(
+      { nickname },
+      { onSuccess: () => setIsEditing(false) },
+    );
   };
 
   return (
@@ -37,9 +64,10 @@ export function ProfilePage() {
               </div>
               <button
                 onClick={handleSaveClick}
-                className="bg-[#2563EB] hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold transition-colors"
+                disabled={!canSubmit || updateMeMutation.isPending}
+                className="bg-[#2563EB] hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-lg font-bold transition-colors"
               >
-                변경사항 저장
+                {updateMeMutation.isPending ? "저장 중" : "변경사항 저장"}
               </button>
             </div>
 
@@ -146,35 +174,25 @@ export function ProfilePage() {
               </div>
             </section>
 
-            {/* 내 즐겨찾기 섹션 (가데이터) */}
+            {/* 내 즐겨찾기 섹션 (GET /favorites) */}
             <section>
               <h2 className="text-lg font-bold text-gray-900 mb-6">내 즐겨찾기</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {/* 영화 카드 1 */}
-                <div>
-                  <div className="aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden mb-3">
-                    <img src="https://image.tmdb.org/t/p/w500/uF6nI2x82QhP6yJ88eR61bZ6lR0.jpg" alt="스파이더맨" className="w-full h-full object-cover" />
-                  </div>
-                  <h3 className="font-bold text-gray-900 truncate">스파이더맨: 브랜드 뉴 데이</h3>
-                  <p className="text-sm text-gray-400">2026.07.29</p>
+              {favoritesQuery.isPending ? (
+                <p className="text-sm text-gray-400">즐겨찾기를 불러오는 중이에요.</p>
+              ) : favoritesQuery.isError ? (
+                <p className="text-sm text-gray-400">즐겨찾기를 불러오지 못했어요.</p>
+              ) : favoritesQuery.data.length === 0 ? (
+                <p className="text-sm text-gray-400">아직 즐겨찾기한 영화가 없어요.</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {favoritesQuery.data.map((favorite) => (
+                    <FavoriteMovieCard
+                      key={favorite.favoriteId}
+                      movieId={favorite.movieId}
+                    />
+                  ))}
                 </div>
-                {/* 영화 카드 2 */}
-                <div>
-                  <div className="aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden mb-3">
-                    <img src="https://image.tmdb.org/t/p/w500/vUUqzWa2LcUAYBlcx4M6RoXixQl.jpg" alt="오디세이" className="w-full h-full object-cover" />
-                  </div>
-                  <h3 className="font-bold text-gray-900 truncate">오디세이</h3>
-                  <p className="text-sm text-gray-400">2026.08.05</p>
-                </div>
-                {/* 영화 카드 3 */}
-                <div>
-                  <div className="aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden mb-3">
-                    <img src="https://image.tmdb.org/t/p/w500/wKiOkZTN9lUUUNZLmtnwubZYONg.jpg" alt="미니언즈" className="w-full h-full object-cover bg-yellow-400" />
-                  </div>
-                  <h3 className="font-bold text-gray-900 truncate">미니언즈 & 몬스터즈</h3>
-                  <p className="text-sm text-gray-400">2026.07.15</p>
-                </div>
-              </div>
+              )}
             </section>
             
           </div>
