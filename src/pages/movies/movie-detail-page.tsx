@@ -7,7 +7,8 @@ import {
   getTmdbPosterUrl,
 } from "../../utils/movies/tmdb-image";
 import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
-import { BookmarkButton } from "../../components/bookmark-button";
+import { FavoriteButton } from "../../components/favorite-button";
+import { RatingForm } from "../../components/movies/rating-form";
 
 function formatRuntime(runtime: number | null) {
   if (runtime === null) {
@@ -112,7 +113,7 @@ export function MovieDetailPage() {
 
           <div className="relative flex-1">
             <div className="absolute right-0 top-0">
-              <BookmarkButton movieId={movie.id} />
+              <FavoriteButton movieId={movie.id} />
             </div>
 
             <h1 className="pr-12 text-[32px] font-bold">
@@ -143,6 +144,8 @@ export function MovieDetailPage() {
           </div>
         </div>
       </div>
+
+      <RatingForm movieId={movie.id} />
     </main>
   );
 }

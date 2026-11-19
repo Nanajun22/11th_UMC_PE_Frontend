@@ -1,15 +1,18 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getMe } from "@/api/members/me";
+import { useAuthStore } from "@/stores/auth-store";
 
-interface HeaderProps {
-  // 로그인 상태 관리가 구현되어 있다면 props나 Zustand store로 대체할 수 있습니다.
-  isLoggedIn?: boolean;
-}
+export function Header() {
+  const accessToken = useAuthStore((state) => state.accessToken);
 
-export function Header({ isLoggedIn = false }: HeaderProps) {
-  // 테스트용 상태 (실제 서비스에서는 zustand 전역 상태 등으로 대체)
-  const [loggedIn, setLoggedIn] = useState(isLoggedIn);
-
+  const meQuery = useQuery({
+    queryKey: ["members", "me"],
+    queryFn: getMe,
+    enabled: Boolean(accessToken),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
   return (
     <header className="w-full bg-white border-b border-gray-100 sticky top-0 z-50">
       <div className="max-w-[1200px] mx-auto h-16 px-6 flex items-center justify-between">
@@ -53,7 +56,7 @@ export function Header({ isLoggedIn = false }: HeaderProps) {
               검색
             </Link>
             <Link
-              to="/profile"
+              to="/my"
               activeProps={{
                 className: "font-bold text-gray-900 border-b-2 border-gray-900 pb-0.5",
               }}
@@ -89,19 +92,21 @@ export function Header({ isLoggedIn = false }: HeaderProps) {
           </Link>
 
           {/* 로그인 / 마이페이지 분기 버튼 */}
-          {loggedIn ? (
-            <Link
-              to="/profile"
-              className="px-5 py-2 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-sm transition-colors"
-            >
-              마이페이지
-            </Link>
-          ) : (
+          {!accessToken ? (
             <Link
               to="/login"
               className="px-5 py-2 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-sm transition-colors"
             >
               로그인
+            </Link>
+          ) : meQuery.isLoading ? (
+            <span className="h-10 w-24 animate-pulse rounded-lg bg-gray-200" />
+          ) : (
+            <Link
+              to="/my"
+              className="px-5 py-2 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-sm transition-colors"
+            >
+              마이페이지
             </Link>
           )}
         </div>

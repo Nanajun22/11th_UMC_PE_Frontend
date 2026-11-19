@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useLoginMutation } from "@/hooks/use-login-mutation";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginPage() {
   const [form, setForm] = useState({
@@ -12,9 +15,18 @@ export function LoginPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("로그인 시도:", form);
+  const loginMutation = useLoginMutation();
+  const canSubmit =
+    EMAIL_REGEX.test(form.email.trim()) && form.password.length > 0;
+
+  const handleSubmit = (event: React.SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!canSubmit || loginMutation.isPending) return;
+
+    loginMutation.mutate({
+      email: form.email.trim(),
+      password: form.password,
+    });
   };
 
   return (
@@ -69,9 +81,10 @@ export function LoginPage() {
         {/* 로그인 버튼 */}
         <button
           type="submit"
-          className="w-full py-4 mt-2 text-white font-bold rounded-lg bg-[#2563EB] hover:bg-blue-700 transition-colors"
+          disabled={!canSubmit || loginMutation.isPending}
+          className="w-full py-4 mt-2 text-white font-bold rounded-lg bg-[#2563EB] hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
         >
-          로그인
+          {loginMutation.isPending ? "로그인 중" : "로그인"}
         </button>
 
         {/* 회원가입 링크 */}
