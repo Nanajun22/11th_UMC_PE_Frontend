@@ -4,7 +4,6 @@ import type { Rating } from "./get-member-ratings";
 export interface UpdateRatingRequest {
   ratingId: number;
   score: number;
-  // 빼고 보내면 기존 후기가 null로 덮이므로 항상 함께 보내요.
   comment?: string;
 }
 

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { getFavoriteStatus } from "@/api/favorites/get-favorite-status";
 import { useAddFavoriteMutation } from "@/hooks/use-add-favorite-mutation";
 import { useRemoveFavoriteMutation } from "@/hooks/use-remove-favorite-mutation";
@@ -12,7 +12,6 @@ interface FavoriteButtonProps {
 export function FavoriteButton({ movieId }: FavoriteButtonProps) {
   const accessToken = useAuthStore((state) => state.accessToken);
 
-  // 토큰이 있을 때만 이 영화의 즐겨찾기 여부를 조회해요.
   const favoriteStatusQuery = useQuery({
     queryKey: ["favorites", movieId],
     queryFn: () => getFavoriteStatus(movieId),
@@ -24,7 +23,7 @@ export function FavoriteButton({ movieId }: FavoriteButtonProps) {
 
   if (!accessToken) {
     return (
-      <Link to="/login" className="text-sm text-white underline">
+      <Link href="/login" className="text-sm text-white underline">
         로그인하고 즐겨찾기
       </Link>
     );

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { getMovieDetail } from "@/api/movies/get-movie-detail";
 import { getTmdbPosterUrl } from "@/utils/movies/tmdb-image";
 
@@ -7,8 +7,6 @@ interface FavoriteMovieCardProps {
   movieId: number;
 }
 
-// 즐겨찾기 API는 movieId만 주기 때문에, 포스터와 제목은 TMDB 상세 API로 가져와요.
-// 상세 페이지와 같은 queryKey를 써서 이미 본 영화는 캐시를 재사용해요.
 export function FavoriteMovieCard({ movieId }: FavoriteMovieCardProps) {
   const movieDetailQuery = useQuery({
     queryKey: ["movies", "detail", movieId],
@@ -31,7 +29,7 @@ export function FavoriteMovieCard({ movieId }: FavoriteMovieCardProps) {
   const posterUrl = getTmdbPosterUrl(movie.poster_path);
 
   return (
-    <Link to="/movies/$movieId" params={{ movieId: String(movie.id) }}>
+    <Link href={`/movies/${movie.id}`}>
       <div className="aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden mb-3">
         {posterUrl && (
           <img
