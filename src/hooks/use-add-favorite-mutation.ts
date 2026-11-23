@@ -7,7 +7,6 @@ export function useAddFavoriteMutation() {
   return useMutation({
     mutationFn: addFavorite,
     onSuccess: () => {
-      // ["favorites"]로 시작하는 캐시(목록, 여부)를 모두 다시 조회해요.
       queryClient.invalidateQueries({ queryKey: ["favorites"] });
     },
     onError: () => {

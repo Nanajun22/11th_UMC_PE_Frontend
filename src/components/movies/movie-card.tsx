@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { cn } from "../../utils/cn";
 import type { TmdbMovieListItem } from "../../api/movies/models";
 import { getTmdbPosterUrl } from "../../utils/movies/tmdb-image";
@@ -19,10 +19,7 @@ export function MovieCard({
   return (
     <article className="min-w-0">
       <div className="relative aspect-[2/3] overflow-hidden rounded-[8px] bg-[#eeeeee]">
-        <Link
-          to="/movies/$movieId"
-          params={{ movieId: String(movie.id) }}
-        >
+        <Link href={`/movies/${movie.id}`}>
           {posterUrl ? (
             <img
               src={posterUrl}

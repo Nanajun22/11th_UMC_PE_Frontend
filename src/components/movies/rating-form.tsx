@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import Link from "next/link";
 import { getMemberRatings } from "@/api/ratings/get-member-ratings";
 import { useCreateRatingMutation } from "@/hooks/use-create-rating-mutation";
 import { useUpdateRatingMutation } from "@/hooks/use-update-rating-mutation";
@@ -22,7 +22,6 @@ export function RatingForm({ movieId }: RatingFormProps) {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [isEditing, setIsEditing] = useState(false);
 
-  // 내가 남긴 평점 목록을 조회해요. memberId를 알 때만 요청해요.
   const ratingsQuery = useQuery({
     queryKey: ["ratings", memberId],
     queryFn: () => getMemberRatings(memberId as number),
@@ -37,7 +36,7 @@ export function RatingForm({ movieId }: RatingFormProps) {
     return (
       <section className="mt-10">
         <h2 className="mb-4 text-[20px] font-bold">내 평점</h2>
-        <Link to="/login" className="text-sm text-[#2563EB] underline">
+        <Link href="/login" className="text-sm text-[#2563EB] underline">
           로그인하고 평점 남기기
         </Link>
       </section>
@@ -53,7 +52,6 @@ export function RatingForm({ movieId }: RatingFormProps) {
     );
   }
 
-  // 내 평점 목록에서 지금 보고 있는 영화의 평점을 찾아요.
   const myRating = ratingsQuery.data?.find(
     (rating) => rating.movieId === movieId,
   );
@@ -73,7 +71,6 @@ export function RatingForm({ movieId }: RatingFormProps) {
     event.preventDefault();
     if (isPending) return;
 
-    // 후기를 비우면 보내지 않아요. 서버에서 후기 없음(null)으로 저장돼요.
     const comment = form.comment.trim() || undefined;
 
     if (myRating) {
@@ -93,7 +90,6 @@ export function RatingForm({ movieId }: RatingFormProps) {
     });
   };
 
-  // 평점이 있고 수정 중이 아니면 내 평점을 보여줘요.
   if (myRating && !isEditing) {
     return (
       <section className="mt-10">
@@ -127,7 +123,6 @@ export function RatingForm({ movieId }: RatingFormProps) {
     );
   }
 
-  // 평점이 없거나 수정 중이면 입력 폼을 보여줘요.
   return (
     <section className="mt-10">
       <h2 className="mb-4 text-[20px] font-bold">

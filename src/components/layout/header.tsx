@@ -1,9 +1,14 @@
-import { Link } from "@tanstack/react-router";
+"use client";
+
+import { Suspense } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { getMe } from "@/api/members/me";
 import { useAuthStore } from "@/stores/auth-store";
+import { HeaderNav, HeaderNavFallback } from "./header-nav";
 
 export function Header() {
+  const isHydrated = useAuthStore((state) => state.isHydrated);
   const accessToken = useAuthStore((state) => state.accessToken);
 
   const meQuery = useQuery({
@@ -17,10 +22,8 @@ export function Header() {
     <header className="w-full bg-white border-b border-gray-100 sticky top-0 z-50">
       <div className="max-w-[1200px] mx-auto h-16 px-6 flex items-center justify-between">
         
-        {/* 좌측: 로고 & 메뉴 */}
         <div className="flex items-center gap-10">
-          {/* UMCine 로고 */}
-          <Link to="/" className="flex items-center gap-2 text-gray-900 font-bold text-xl">
+          <Link href="/" className="flex items-center gap-2 text-gray-900 font-bold text-xl">
             <svg
               className="w-7 h-7"
               viewBox="0 0 24 24"
@@ -31,49 +34,14 @@ export function Header() {
             <span>UMCine</span>
           </Link>
 
-          {/* 네비게이션 메뉴 */}
-          <nav className="flex items-center gap-6">
-            <Link
-              to="/"
-              activeProps={{
-                className: "font-bold text-gray-900 border-b-2 border-gray-900 pb-0.5",
-              }}
-              inactiveProps={{
-                className: "text-gray-600 hover:text-gray-900 font-medium",
-              }}
-            >
-              영화
-            </Link>
-            <Link
-              to="/search"
-              activeProps={{
-                className: "font-bold text-gray-900 border-b-2 border-gray-900 pb-0.5",
-              }}
-              inactiveProps={{
-                className: "text-gray-600 hover:text-gray-900 font-medium",
-              }}
-            >
-              검색
-            </Link>
-            <Link
-              to="/my"
-              activeProps={{
-                className: "font-bold text-gray-900 border-b-2 border-gray-900 pb-0.5",
-              }}
-              inactiveProps={{
-                className: "text-gray-600 hover:text-gray-900 font-medium",
-              }}
-            >
-              내 정보
-            </Link>
-          </nav>
+          <Suspense fallback={<HeaderNavFallback />}>
+            <HeaderNav />
+          </Suspense>
         </div>
 
-        {/* 우측: 검색 아이콘 버튼 & 로그인/마이페이지 버튼 */}
         <div className="flex items-center gap-3">
-          {/* 검색 아이콘 버튼 */}
           <Link
-            to="/search"
+            href="/search"
             className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
           >
             <svg
@@ -91,10 +59,11 @@ export function Header() {
             </svg>
           </Link>
 
-          {/* 로그인 / 마이페이지 분기 버튼 */}
-          {!accessToken ? (
+          {!isHydrated ? (
+            <span className="h-10 w-24 animate-pulse rounded-lg bg-gray-200" />
+          ) : !accessToken ? (
             <Link
-              to="/login"
+              href="/login"
               className="px-5 py-2 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-sm transition-colors"
             >
               로그인
@@ -103,7 +72,7 @@ export function Header() {
             <span className="h-10 w-24 animate-pulse rounded-lg bg-gray-200" />
           ) : (
             <Link
-              to="/my"
+              href="/my"
               className="px-5 py-2 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-sm transition-colors"
             >
               마이페이지
